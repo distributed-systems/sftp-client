@@ -1,0 +1,10 @@
+name: sftp-client
+organization: distributed-systems
+version: 1.0.0
+elevatorPitch: A basic and modern sftp client
+commands:
+    test: node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.mjs
+npm-convert:
+    source:
+        - ./src
+    destination: ./npm
