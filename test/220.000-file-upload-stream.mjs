@@ -28,7 +28,7 @@ section('SFTP Client: file stream upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const writeStream = await client.getWriteStream('upload/100-bytes.bin.upload');
+        const writeStream = await client.createtWriteStream('upload/100-bytes.bin.upload');
         assert(writeStream);
 
         const sourceFile = path.join(path.dirname(new URL(import.meta.url).pathname), 'data/sftp-root/100-bytes.bin');
@@ -57,7 +57,7 @@ section('SFTP Client: file stream upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const writeStream = await client.getWriteStream('100-bytes.bin.upload');
+        const writeStream = await client.createtWriteStream('100-bytes.bin.upload');
         assert(writeStream);
 
         const sourceFile = path.join(path.dirname(new URL(import.meta.url).pathname), 'data/sftp-root/100-bytes.bin');

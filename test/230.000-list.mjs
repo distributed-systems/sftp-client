@@ -25,7 +25,7 @@ section('SFTP Client: file upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const files = await client.readDir('share');
+        const files = await client.list('share');
 
         assert(files);
         assert(files.length > 0);
@@ -44,7 +44,7 @@ section('SFTP Client: file upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const files = await client.readDir('share', true);
+        const files = await client.list('share', true);
 
         assert(files);
         assert(files.length > 0);

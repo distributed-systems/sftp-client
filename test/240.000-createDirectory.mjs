@@ -5,8 +5,7 @@ import SFTPServer from './lib/SFTPServer.mjs';
 import SFTPClient from '../src/SFTPClient.mjs';
 
 
-
-section('SFTP Client: file download', (section) => {
+section('SFTP Client: create directory', (section) => {
     let server;
 
     section.setup('starting the SFTP Server', async () => {
@@ -17,7 +16,7 @@ section('SFTP Client: file download', (section) => {
 
 
 
-    section.test('get a file', async() => {
+    section.test('create a directory', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -26,16 +25,13 @@ section('SFTP Client: file download', (section) => {
             privateKey: server.privateKey,
         });
 
-        const buffer = await client.getFile('share/100-bytes.bin');
-        assert(buffer);
-        assert.equal(buffer.length, 100);
-
+        await client.createDirectory('upload/testdir');
         await client.end();
     });
 
 
 
-    section.test('get a file for a non existing path', async() => {
+    section.test('create a path', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -44,25 +40,37 @@ section('SFTP Client: file download', (section) => {
             privateKey: server.privateKey,
         });
 
-        
+        await client.createDirectory('upload/testdir-2/subdir/sub-subdir', true);
+        await client.end();
+    });
+
+
+
+    section.test('create a path, non recursive', async() => {
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
 
         let err;
         try {
-            await client.getFile('nope');
-        } catch(e) {
+            await client.createDirectory('upload/some/subdir/sub-subdir');
+        } catch (e) {
             err = e;
         } finally {
             assert(err);
-            assert.equal(err.message, `Failed to create stream for file 'nope': no such file!`);
+            assert(err.message.startsWith(`Cannot create directory 'upload/some/subdir/sub-subdir', the parent directory`));
         }
 
-
         await client.end();
     });
 
 
 
-    section.test('get a big file', async() => {
+    section.test('create an existing directory', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -71,45 +79,15 @@ section('SFTP Client: file download', (section) => {
             privateKey: server.privateKey,
         });
 
-        const buffer = await client.getFile('share/100-Kbytes.bin');
-        assert(buffer);
-        assert.equal(buffer.length, 102400);
-
-        await client.end();
-    });
-
-
-
-    section.test('get a big text file', async() => {
-        const client = new SFTPClient();
-        await client.connect({
-            hostname: 'l.dns.porn',
-            port: 2222,
-            username: 'foo',
-            privateKey: server.privateKey,
-        });
-
-        const buffer = await client.getFile('share/100-Kbytes.txt');
-        assert(buffer);
-        assert.equal(buffer.length, 100000);
-
-        await client.end();
-    });
-
-
-
-    section.test('get a big text file containing multibyte characters', async() => {
-        const client = new SFTPClient();
-        await client.connect({
-            hostname: 'l.dns.porn',
-            port: 2222,
-            username: 'foo',
-            privateKey: server.privateKey,
-        });
-
-        const buffer = await client.getFile('share/multibyte-characters.txt');
-        assert(buffer);
-        assert.equal(buffer.length, 1300000);
+        let err;
+        try {
+            await client.createDirectory('upload');
+        } catch (e) {
+            err = e;
+        } finally {
+            assert(err);
+            assert(err.message.startsWith(`Cannot create directory 'upload'`));
+        }
 
         await client.end();
     });

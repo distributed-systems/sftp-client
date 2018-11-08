@@ -1,4 +1,7 @@
+import Stats from './Stats.mjs';
+import Permissions from './Permissions.mjs';
 import ssh2 from 'ssh2';
+import path from 'path';
 const SSH2Client = ssh2.Client;
 
 
@@ -11,12 +14,17 @@ const statusMap = new Map([
 ]);
 
 
+export {
+    Permissions,
+    SFTPClient as default,
+}
+
 
 /**
  * a basic SFTP Client. Written because no other client is even remotely of any use!
  */
 
-export default class SFTPClient {
+class SFTPClient {
 
     /**
      * set up the class
@@ -115,13 +123,13 @@ export default class SFTPClient {
      */
     async getFile(remoteFilePath) {
         this.needsToBeConnected('getFile');
-        const stream = await this.getReadStream(remoteFilePath);
+        const stream = await this.createReadStream(remoteFilePath);
 
         return new Promise((resolve, reject) => {
             let buffer;
 
             stream.on('data', (chunk) => {
-                if (buffer) buffer = buffer.concat(chunk);
+                if (buffer) buffer = Buffer.concat([buffer, chunk]);
                 else buffer = chunk;
             }); 
 
@@ -145,8 +153,8 @@ export default class SFTPClient {
      * @param      {string}   remoteFilePath  The remote file path
      * @return     {Promise<readStream>}  The file stream.
      */
-    async getReadStream(remoteFilePath) {
-        this.needsToBeConnected('getReadStream');
+    async createReadStream(remoteFilePath) {
+        this.needsToBeConnected('createReadStream');
 
         await this.stat(remoteFilePath).catch((err) => {
             if (err.code === 2) {
@@ -156,11 +164,7 @@ export default class SFTPClient {
             throw err;
         });
 
-        // return the stream as is
-        return this.sftpClient.createReadStream(remoteFilePath, {
-            highWaterMark: 65535,
-            encoding: 'binary',
-        });
+        return this.sftpClient.createReadStream(remoteFilePath);
     }
 
 
@@ -175,7 +179,7 @@ export default class SFTPClient {
      */
     async putFile(remoteFilePath, buffer) {
         this.needsToBeConnected('putFile');
-        const writeStream = await this.getWriteStream(remoteFilePath);
+        const writeStream = await this.createtWriteStream(remoteFilePath);
 
         return new Promise((resolve, reject) => {
             writeStream.on('error', reject);
@@ -196,8 +200,8 @@ export default class SFTPClient {
      * @param      {string}   remoteFilePath  The remote file path
      * @return     {Promise<writeStream>}  The write stream.
      */
-    async getWriteStream(remoteFilePath) {
-        this.needsToBeConnected('getWriteStream');
+    async createtWriteStream(remoteFilePath) {
+        this.needsToBeConnected('createtWriteStream');
 
         let writeStream;
 
@@ -226,9 +230,195 @@ export default class SFTPClient {
 
 
 
+    /**
+     * move a file or directory to a new location
+     *
+     * @param      {string}   sourceRemotePath  The source remote path
+     * @param      {string}   targetRemotePath  The target remote path
+     * @return     {Promise}  this
+     */
+    async move(sourceRemotePath, targetRemotePath) {
+        this.needsToBeConnected('move');
+
+        const sourceExists = await this.exists(sourceRemotePath);
+        if (!sourceExists) {
+            throw new Error(`Cannot move path '${sourceRemotePath}': it does not exist!`);
+        }
+
+        const targetExists = await this.exists(targetRemotePath);
+        if (targetExists) {
+            throw new Error(`Cannot move path '${sourceRemotePath}': target path '${targetRemotePath}' exists already!`);
+        }
+
+        return await new Promise((resolve, reject) => {
+            this.sftpClient.rename(sourceRemotePath, targetRemotePath, (err) => {
+                if (err) {
+                    err.message = `Failed to move path '${sourceRemotePath}': ${err.message}`;
+
+                    reject(err);
+                } else resolve(this);
+            });
+        });
+    }
+
+
+
+
+
+
+
+    /**
+     * set permissions on a path
+     *
+     * @param      {string}   remotePath   The remote path
+     * @param      {object}   permissions  instance of the permissions class
+     * @return     {Promise}  this
+     */
+    async setPermissions(remotePath, permissions) {
+        this.needsToBeConnected('setPermissions');
+
+        const targetExists = await this.exists(remotePath);
+        if (!targetExists) {
+            throw new Error(`Cannot set permissions on path '${remotePath}': path does not exist!`);
+        }
+
+        return await new Promise((resolve, reject) => {
+            this.sftpClient.chmod(remotePath, permissions.getMode(), (err) => {
+                if (err) {
+                    err.message = `Failed to set permissions on path '${remotePath}': ${err.message}`;
+
+                    reject(err);
+                } else resolve(this);
+            });
+        });
+    }
+
+
+
+
+
+    /**
+     * delete a file from the server
+     *
+     * @param      {string}   remoteFilePath  The remote file path
+     * @return     {Promise}  this
+     */
+    async deleteFile(remoteFilePath) {
+        this.needsToBeConnected('deleteFile');
+
+        const fileExists = await this.exists(remoteFilePath);
+
+        if (!fileExists) {
+            throw new Error(`Cannot delete file '${remoteFilePath}': it does not exist!`);
+        }
+
+        // check if we're trying to delete a directory
+        const stats = await this.stat(remoteFilePath);
+
+        if (stats.isDirectory()) {
+            throw new Error(`Cannot delete file '${remoteFilePath}': path is a directory!`);
+        } else if (!stats.isFile() && !stats.isSymbolicLink()) {
+            throw new Error(`Cannot delete file '${remoteFilePath}': path is not a file!`);
+        }
+        
+
+        return await new Promise((resolve, reject) => {
+            this.sftpClient.unlink(remoteFilePath, (err) => {
+                if (err) {
+                    err.message = `Failed to delete file '${remoteFilePath}': ${err.message}`;
+
+                    reject(err);
+                } else resolve(this);
+            });
+        });
+    }
+
+
+
+
+
+
+    /**
+     * delete a directory and optionally all its contents
+     *
+     * @param      {string}   remotePath  The remote path
+     * @param      {boolean}  recursive   delete files and directories recursive
+     * @return     {Promise}  this
+     */
+    async deleteDirectory(remotePath, recursive = false) {
+        this.needsToBeConnected('deleteDirectory');
+        
+        const fileExists = await this.exists(remotePath);
+
+        if (!fileExists) {
+            throw new Error(`Cannot delete directory '${remotePath}': it does not exist!`);
+        }
+
+        const stats = await this.stat(remotePath);
+
+        if (!stats.isDirectory()) {
+            throw new Error(`Cannot delete directory '${remotePath}': path is not a directory!`);
+        }
+
+        const files = await this.list(remotePath, true);
+
+        if (files.length && !recursive) {
+            throw new Error(`Cannot delete directory '${remotePath}': it contains files!`);
+        }
+
+
+        for (const file of files) {
+            if (file.stats.isDirectory()) {
+                await this.deleteDirectory(path.join(remotePath, file.filename), recursive);
+            } else {
+                await this.deleteFile(path.join(remotePath, file.filename));
+            }
+        }
+
+        return this;
+    }
+
+
+
+
+
+    /**
+     * Creates a directory.
+     *
+     * @param      {string}   remotePath  The remote path
+     * @param      {boolean}  recursive   create all missing directories of the path
+     * @return     {Promise}  this
+     */
     async createDirectory(remotePath, recursive = false) {
         this.needsToBeConnected('createDirectory');
 
+        // check if the directory exists already
+        const exists = await this.exists(remotePath);
+        if (exists) {
+            throw new Error(`Cannot create directory '${remotePath}', the path does already exist!`);
+        }
+
+        const parentDir = path.dirname(remotePath);
+        const parentDirExists = await this.exists(parentDir);
+
+        // create parent directories 
+        if (!parentDirExists) {
+            if (recursive) await this.createDirectory(parentDir, recursive);
+            else {
+                throw new Error(`Cannot create directory '${remotePath}', the parent directory '${parentDir}' does not exist!`);
+            }
+        }
+
+
+        return await new Promise((resolve, reject) => {
+            this.sftpClient.mkdir(remotePath, (err) => {
+                if (err) {
+                    err.message = `Failed to create directory '${remotePath}': ${err.message}`;
+
+                    reject(err);
+                } else resolve(this);
+            });
+        });
     }
 
 
@@ -252,7 +442,7 @@ export default class SFTPClient {
                     }
 
                     reject(err);
-                } else resolve(stats);
+                } else resolve(new Stats(stats));
             });
         });
     }
@@ -269,6 +459,7 @@ export default class SFTPClient {
      */
     async exists(remotePath) {
         this.needsToBeConnected('exists');
+
         return this.stat(remotePath).then((stats) => {
             return !!stats;
         }).catch((err) => {
@@ -282,17 +473,18 @@ export default class SFTPClient {
 
 
 
+
+
     /**
      * lsit the contents of a directory
      *
-     * @param      {string}          remoteDir     The remote dir
-     * @param      {boolean}         includeStats  if true, instead of filepaths an list of objects
-     *                                             is returned
+     * @param      {string}          remoteDir  The remote dir
+     * @param      {boolean}         detailed   return detailed information about the files
      * @return     {Promise<array>}  the file list for the directory
      */
-    async readDir(remoteDir, includeStats = false) {
+    async list(remoteDir, detailed = false) {
         this.needsToBeConnected('readDir');
-        
+
         return new Promise((resolve, reject) => {
             this.sftpClient.readdir(remoteDir, (err, fileList) => {
                 if (err) {
@@ -304,10 +496,11 @@ export default class SFTPClient {
 
                     reject(err);
                 } else {
-                    if (includeStats) {
+                    if (detailed) {
                         fileList = fileList.map(item => ({
                             filename: item.filename,
-                            stats: item.attrs,
+                            isDirectory: item.longname.startsWith('d'),
+                            stats: new Stats(item.attrs),
                         }));
                     } else {
                         fileList = fileList.map(item => item.filename);

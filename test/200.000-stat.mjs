@@ -27,11 +27,10 @@ section('SFTP Client: stat', (section) => {
         });
 
         const stats = await client.stat('share/100-bytes.bin');
-        
 
         assert(stats);
         assert(typeof stats === 'object');
-        assert(stats.mode > 0);
+        assert(stats.isFile());
 
         await client.end();
     });

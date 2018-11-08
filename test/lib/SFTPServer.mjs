@@ -29,7 +29,7 @@ export default class SFTPServer {
         if (!this.loaded) {
             this.loaded = true;
 
-            this.publicKeyPath = path.join(this.dirname, '../data/keys//id_rsa.pub');
+            this.publicKeyPath = path.join(this.dirname, '../data/keys/id_rsa.pub');
             this.privateKeyPath = path.join(this.dirname, '../data/keys/id_rsa');
 
             this.publicKey = await readFile(this.publicKeyPath);
