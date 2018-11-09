@@ -1,8 +1,8 @@
 {
-  "name": "sftp-client",
-  "version": "1.0.0",
+  "name": "@distributed-systems/sftp-client",
+  "version": "1.0.1",
   "description": "A simple, fully tested and reliable SFTP Client",
-  "main": "npm/SFTPClient.mjs",
+  "main": "npm/src/SFTPClient.mjs",
   "directories": {
     "test": "test"
   },
