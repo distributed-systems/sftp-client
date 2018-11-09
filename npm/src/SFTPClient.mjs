@@ -165,7 +165,19 @@ class SFTPClient {
             throw err;
         });
 
-        return this.sftpClient.createReadStream(remoteFilePath);
+        const readStream = this.sftpClient.createReadStream(remoteFilePath);
+
+
+        // since the ssh2 library this client relies on has a faulty implementation regarding
+        // the destroy method, I'm going to monkey patch this here.
+        // original issue: https://github.com/mscdex/ssh2-streams/issues/112
+        const originalDestroy = readStream.destroy.bind(readStream);
+        readStream.destroy = function(err) {
+            if (err) this.emit('error', err);
+            originalDestroy();
+        }
+
+        return readStream;
     }
 
 

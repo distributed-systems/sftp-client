@@ -145,6 +145,46 @@ section('SFTP Client: file stream download', (section) => {
 
 
 
+
+
+    section.test('the destroy method must emit the error event', async() => {
+        // test added due to an invalid underlying library implementation:
+        // issue: https://github.com/mscdex/ssh2-streams/issues/112
+        
+
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
+
+        const readStream = await client.createReadStream('share/100-Kbytes.bin');
+
+        await new Promise((resolve, reject) => {
+            let err;
+
+            readStream.on('data', () => {
+                readStream.destroy(new Error('bad stuff happened!'));
+            });
+
+            readStream.on('error', (e) => {
+                err = e;
+            });
+
+
+            readStream.on('close', () => {
+                if (err && err.message === 'bad stuff happened!') resolve();
+                else reject(new Error('The error event was not triggered by the destroy method call!'));
+            });
+        });
+
+        await client.end();
+    });
+
+
+
     section.destroy('stopping the SFTP Server', async () => {
         await server.end();
     });
