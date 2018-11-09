@@ -6,7 +6,7 @@ A simple, fully tested and reliable SFTP Client.
 Compatible with node.js 10+, with the `--experimental-modules` flag set.
 
 
-## Module Reference
+## Function Reference
 
 
 - <a href="#class-sftpclient">Class SFTPClient</a>
@@ -425,8 +425,8 @@ See  <a href="#class-stats">Class Stats</a> for the contents of the stats object
 ## Class Permissions
 
 The Permissions class holds information about the permissions of a file-system 
-object. It can be used to get the type of an object and to read or write the 
-permissions of an object.
+object. It can be used to get the type of an object. It can also be used to read 
+or write the permissions of an object.
 
 The permissions object is returned as a property of the <a href="#class-stats">stats</a> object by the <a href="#sftpclientstat-path">stat</a> and the <a href="#sftpclientlist-path-detailed--false">list</a> calls.
 It can be passed to the <a href="#sftpclientsetpermissions-filepath-permissions">setPermissions</a> call for changing permissions for an object.
@@ -441,7 +441,6 @@ indicate the `read`, `write` and `execute` permissions.
 ```javascript
 import { Permissions } from '@distributed-systems/sftp-client';
 
-// give the user read permissions
 const permissions = new Permissions();
 
 permissions.user.read = true;
