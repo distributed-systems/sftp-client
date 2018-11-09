@@ -110,6 +110,7 @@ class SFTPClient {
         this.needsToBeConnected('end');
         this.setStatus('ended');
         this.ssh2Connection.end();
+        return this;
     }
 
 
@@ -499,7 +500,6 @@ class SFTPClient {
                     if (detailed) {
                         fileList = fileList.map(item => ({
                             filename: item.filename,
-                            isDirectory: item.longname.startsWith('d'),
                             stats: new Stats(item.attrs),
                         }));
                     } else {

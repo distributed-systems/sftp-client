@@ -3,25 +3,29 @@
 A simple, fully tested and reliable SFTP Client.
 
 
+Compatible with node.js 10+, with the `--experimental-modules` flag set.
+
+
 ## Function Reference
 
 
 - <a href="#class-sftpclient">Class SFTPClient</a>
-    - <a href="#sftpclient.connect-(credentials)">connect (credentials)</a>
-    - <a href="#sftpclient.createdirectory-(directoryPath,-recursive-=-false)">createDirectory (directoryPath, recursive = false)</a>
-    - <a href="#sftpclient.createreadstream-(filepath)">createReadStream (filePath)</a>
-    - <a href="#overview">createWriteStream (filePath)</a>
-    - <a href="#overview">deleteDirectory (directoryPath, recursive = false)</a>
-    - <a href="#overview">deleteFile (filePAth)</a>
-    - <a href="#overview">end ()</a>
-    - <a href="#overview">exists (path)</a>
-    - <a href="#overview">getFile (filePath)</a>
-    - <a href="#overview">list (path)</a>
-    - <a href="#overview">move (sourcePath, targetPath)</a>
-    - <a href="#overview">putFile (filePath, dataBuffer)</a>
-    - <a href="#overview">setPermissions (filePath, permissions)</a>
-    - <a href="#overview">stat (path)</a>
-- <a href="#overview">Class Permissions</a>
+    - <a href="#sftpclientconnect-credentials">connect (credentials)</a>
+    - <a href="#sftpclientcreatedirectory-directorypath-recursive--false">createDirectory (directoryPath, recursive = false)</a>
+    - <a href="#sftpclientcreatereadstream-filepath">createReadStream (filePath)</a>
+    - <a href="#sftpclientcreatewritestream-filepath">createWriteStream (filePath)</a>
+    - <a href="#sftpclientdeletedirectory-directorypath-recursive--false">deleteDirectory (directoryPath, recursive = false)</a>
+    - <a href="#sftpclientdeletefile-filepath">deleteFile (filePath)</a>
+    - <a href="#sftpclientend">end ()</a>
+    - <a href="#sftpclientexists-path">exists (path)</a>
+    - <a href="#sftpclientgetfile-filepath">getFile (filePath)</a>
+    - <a href="#sftpclientlist-path-detailed--false">list (path, detailed = false)</a>
+    - <a href="#sftpclientmove -sourcepath-targetpath">move (sourcePath, targetPath)</a>
+    - <a href="#sftpclientputfile-filepath-databuffer">putFile (filePath, dataBuffer)</a>
+    - <a href="#sftpclientsetpermissions-filepath-permissions">setPermissions (filePath, permissions)</a>
+    - <a href="#sftpclientstat-path">stat (path)</a>
+- <a href="#class-permissions">Class Permissions</a>
+- <a href="#class-stats">Class Stats</a>
 - <a href="#overview">Examples</a>
 
 
@@ -66,6 +70,8 @@ You can either connect using a password or a private-key. You can use both
 methods at the same time. The first method that results in success will be used
 then.
 
+Returns the sftpClient instance.
+
 
 **Connect using a password**
 ```javascript
@@ -99,6 +105,9 @@ Creates a directory on the server. Can create an entire path if the `recursive`
 parameter is set to `true`.
 
 
+Returns the sftpClient instance.
+
+
 **Create a directory**
 ```javascript
 await client.createDirectory('best-directory-ever');
@@ -118,6 +127,8 @@ await client.createDirectory('best-directory-ever/awesome-directory', true);
 Downloads a file using a readable stream. The stream has the same API as 
 standard [node.js readable streams](https://nodejs.org/dist/latest/docs/api/stream.html#stream_readable_streams). This is the method you should use 
 to download files to the file-system.
+
+Returns a readable stream.
 
 
 **Download a file to the file-system**
@@ -163,3 +174,228 @@ readStream.on('close', () => {
     console.log(hash.digest('hex'));
 });
 ```
+
+
+
+
+
+### SFTPClient.createWriteStream (filePath)
+
+Uploads a file using a writable stream. The stream has the same API as 
+standard [node.js writable streams](https://nodejs.org/dist/latest/docs/api/stream.html#stream_writable_streams). 
+
+Returns a writable stream.
+
+
+**Download a file from the file-system**
+```javascript
+import fs from 'fs';
+
+// create the writable stream for the file you like to upload
+const writeStream = await client.createReadStream('fancy-file.fancy');
+
+
+// create a read stream for the file the data should be read from
+const readStream = fs.createReadStream('/home/eventEmitter/fancy-file.fancy');
+
+
+// pipe the stream
+readStream.pipe(writeStream);
+
+
+// get notified when the stream has finished
+writeStream.on('close', () => {
+    console.log('the file was successfully uploaded!');
+});
+```
+
+
+
+
+
+### SFTPClient.deleteDirectory (directoryPath, recursive = false)
+
+Deletes a directory on the server. Can recursively delete all contained files
+and directories if the `recursive` parameter is set to `true`.
+
+Returns the sftpClient instance.
+
+
+**Delete a directory**
+```javascript
+await client.deleteDirectory('best-directory-ever');
+```
+
+
+**Delete a directory recursively**
+```javascript
+await client.deleteDirectory('best-directory-ever', true);
+```
+
+
+
+### SFTPClient.deleteFile (filePath)
+
+Deletes one file.
+
+Returns the sftpClient instance.
+
+
+**Delete a file**
+```javascript
+await client.deleteFile('/path/to/file/that/needs/to.go');
+```
+
+
+
+
+
+### SFTPClient.end ()
+
+Ends the connection to the server.
+
+Returns the sftpClient instance.
+
+
+**End the connection**
+```javascript
+await client.end();
+```
+
+
+
+
+
+### SFTPClient.exists (path)
+
+checks if a file or directory exists.
+
+Returns a boolean.
+
+
+**Check if a file exists**
+```javascript
+const fileExists = await client.exists('path/to/file');
+```
+
+
+**Check if a directory exists**
+```javascript
+const fileExists = await client.exists('path/to/directory');
+```
+
+
+
+
+### SFTPClient.getFile (filePath)
+
+Downloads a file into a buffer.
+
+Returns a buffer containing the requested file.
+
+
+**Connect using a password**
+```javascript
+const fileBuffer = await client.getFile('/path/to.file');
+```
+
+
+
+
+### SFTPClient.list (path, detailed = false)
+
+Lists the path specified. The path may be a file or a directory.
+
+Returns an array containing file-names or an array containing objects containing
+detailed information about the files.
+
+
+**List files of a directory**
+```javascript
+const filenames = await client.list('path/to/directory');
+
+console.log(filenames);
+// ['a.mjs', 'directory', 'z.jpg']
+```
+
+
+
+**List files of a directory, return details**
+```javascript
+const files = await client.list('path/to/directory', true);
+
+console.log(files);
+[{filename: 'a.mjs', stats: StatsObject}]
+```
+
+See  <a href="#class-stats">Class Stats</a> for the contents of the StatsObject
+
+
+
+
+
+
+### SFTPClient.move (sourcePath, targetPath)
+
+Moves a file or directory from the `sourcePath` to the `targetPath`. Can be used
+to rename files and directories.
+
+Returns the sftpClient instance.
+
+
+**Rename a file**
+```javascript
+await client.move('nice-code.mjs', 'legacy-code.mjs');
+```
+
+
+**Move a directory**
+```javascript
+await client.move('directory', 'some/path/for/the/directory');
+```
+
+
+
+
+
+### SFTPClient.setPermissions (filePath, permissions)
+
+Sets the permissions on a file.
+
+Returns the sftpClient instance.
+
+
+**Set the permissions on a file**
+```javascript
+import { Permissions } from '@distributed-systems/sftp-client';
+
+// give the user read permissions
+const permissions = new Permissions();
+permissions.user.read = true;
+
+await client.setPermissions('path/to/file', permissions);
+```
+
+See  <a href="#class-permissions">Class Permissions</a> for details about the permissions object.
+
+
+
+
+
+
+### SFTPClient.stat (path)
+
+Get stats about the file. Reports the type of the file and its permissions.
+
+Returns an instance of the <a href="#class-stats">Stats class</a>.
+
+
+**get stats for a file**
+```javascript
+const stats = await client.stat('path/to/file');
+```
+
+See  <a href="#class-stats">Class Stats</a> for the contents of the stats object.
+
+
+
