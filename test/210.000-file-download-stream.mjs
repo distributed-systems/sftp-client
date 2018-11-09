@@ -95,6 +95,56 @@ section('SFTP Client: file stream download', (section) => {
 
 
 
+
+    section.test('pausing and resuming the stream', async() => {
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
+
+        const readStream = await client.createReadStream('share/100-Kbytes.bin');
+        const stats = await client.stat('share/100-Kbytes.bin');
+
+        await new Promise((resolve, reject) => {
+            let len = 0;
+            let chunkCount = 0;
+
+
+            readStream.on('data', (chunk) => {
+                chunkCount++;
+
+                // interrupt the stream
+                if (len === 0) {
+                    readStream.pause();
+
+                    setTimeout(() => {
+                        readStream.resume();
+                    }, 1000);
+                }
+
+                len += chunk.length;
+            });
+
+
+            readStream.on('close', () => {
+                if (len === stats.size) {
+                    assert(chunkCount >= 2);
+
+                    resolve();
+                } else {
+                    throw new Error(`buffer length is invalid, ${len} vs ${stats.size}!`);
+                }
+            });
+        });
+
+        await client.end();
+    });
+
+
+
     section.destroy('stopping the SFTP Server', async () => {
         await server.end();
     });

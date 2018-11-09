@@ -13,7 +13,7 @@ export default class SFTPServer {
     constructor() {
         this.dirname = path.dirname(new URL(import.meta.url).pathname);
         this.loaded = false;
-        this.name = `sftp-test-server-${Math.round(Math.random()*1000000)}`;
+        this.name = `sftp-test-server`;
         this.dockerImage = 'atmoz/sftp';
     }
 
@@ -37,6 +37,8 @@ export default class SFTPServer {
 
             // pull the docker image
             await this.exec(`docker pull ${this.dockerImage}`);
+
+            await this.exec(`docker container stop ${this.name}`).catch(() => true);
         }
     }
 

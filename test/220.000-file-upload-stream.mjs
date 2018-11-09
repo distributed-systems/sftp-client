@@ -80,7 +80,6 @@ section('SFTP Client: file stream upload', (section) => {
     });
 
 
-
     section.destroy('stopping the SFTP Server', async () => {
         await server.end();
     });
