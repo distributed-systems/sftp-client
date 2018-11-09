@@ -6,7 +6,7 @@ A simple, fully tested and reliable SFTP Client.
 Compatible with node.js 10+, with the `--experimental-modules` flag set.
 
 
-## Function Reference
+## Module Reference
 
 
 - <a href="#class-sftpclient">Class SFTPClient</a>
@@ -16,17 +16,23 @@ Compatible with node.js 10+, with the `--experimental-modules` flag set.
     - <a href="#sftpclientcreatewritestream-filepath">createWriteStream (filePath)</a>
     - <a href="#sftpclientdeletedirectory-directorypath-recursive--false">deleteDirectory (directoryPath, recursive = false)</a>
     - <a href="#sftpclientdeletefile-filepath">deleteFile (filePath)</a>
-    - <a href="#sftpclientend">end ()</a>
+    - <a href="#sftpclientend-">end ()</a>
     - <a href="#sftpclientexists-path">exists (path)</a>
     - <a href="#sftpclientgetfile-filepath">getFile (filePath)</a>
     - <a href="#sftpclientlist-path-detailed--false">list (path, detailed = false)</a>
-    - <a href="#sftpclientmove -sourcepath-targetpath">move (sourcePath, targetPath)</a>
+    - <a href="#sftpclientmove-sourcepath-targetpath">move (sourcePath, targetPath)</a>
     - <a href="#sftpclientputfile-filepath-databuffer">putFile (filePath, dataBuffer)</a>
     - <a href="#sftpclientsetpermissions-filepath-permissions">setPermissions (filePath, permissions)</a>
     - <a href="#sftpclientstat-path">stat (path)</a>
 - <a href="#class-permissions">Class Permissions</a>
 - <a href="#class-stats">Class Stats</a>
-- <a href="#overview">Examples</a>
+    - <a href="#statsisblockdevice-">isBlockDevice ()</a>
+    - <a href="#statsischaracterdevice-">isCharacterDevice ()</a>
+    - <a href="#statsisdirectory-">isDirectory ()</a>
+    - <a href="#statsisfifo-">isFIFO ()</a>
+    - <a href="#statsisfile-">isFile ()</a>
+    - <a href="#statsissocket-">isSocket ()</a>
+    - <a href="#statsissymboliclink-">isSymbolicLink ()</a>
 
 
 
@@ -294,7 +300,7 @@ Downloads a file into a buffer.
 Returns a buffer containing the requested file.
 
 
-**Connect using a password**
+**Download a file**
 ```javascript
 const fileBuffer = await client.getFile('/path/to.file');
 ```
@@ -358,9 +364,25 @@ await client.move('directory', 'some/path/for/the/directory');
 
 
 
+### SFTPClient.putFile (filePath, dataBuffer)
+
+Uploads a file from a buffer.
+
+Returns the sftpClient instance.
+
+
+**Upload a file**
+```javascript
+await client.putFile('/path/to.file', buffer);
+```
+
+
+
+
 ### SFTPClient.setPermissions (filePath, permissions)
 
-Sets the permissions on a file.
+Sets the permissions on a file. If you need to get the permissions of a file you 
+can <a href="#sftpclientstat-path">stat</a> it!
 
 Returns the sftpClient instance.
 
@@ -399,3 +421,155 @@ See  <a href="#class-stats">Class Stats</a> for the contents of the stats object
 
 
 
+
+## Class Permissions
+
+The Permissions class holds information about the permissions of a file-system 
+object. It can be used to get the type of an object and to read or write the 
+permissions of an object.
+
+The permissions object is returned as a property of the <a href="#class-stats">stats</a> object by the <a href="#sftpclientstat-path">stat</a> and the <a href="#sftpclientlist-path-detailed--false">list</a> calls.
+It can be passed to the <a href="#sftpclientsetpermissions-filepath-permissions">setPermissions</a> call for changing permissions for an object.
+
+
+The object exposes properties for the permissions for the `user`, the `group` an for
+`other` Each of those properties is an object with three writable properties which
+indicate the `read`, `write` and `execute` permissions.
+
+
+**Give all permissions to everyone**
+```javascript
+import { Permissions } from '@distributed-systems/sftp-client';
+
+// give the user read permissions
+const permissions = new Permissions();
+
+permissions.user.read = true;
+permissions.user.write = true;
+permissions.user.execute = true;
+
+permissions.group.read = true;
+permissions.group.write = true;
+permissions.group.execute = true;
+
+permissions.other.read = true;
+permissions.other.write = true;
+permissions.other.execute = true;
+
+await client.setPermissions('path/to/file', permissions);
+```
+
+**Check if the user has write permissions on a file**
+```javascript
+const stats = await client.stat('path/to/file');
+
+console.log(stats.permissions.user.write); // true or false
+```
+
+
+
+## Class Stats
+
+The stats object is returned by the <a href="#sftpclientstat-path">stat</a> and the <a href="#sftpclientlist-path-detailed--false">list</a> calls.
+
+The object has a property containing a <a href="#class-permissions">permissions</a> object and a bunch of methods
+that can be used to determine the type of the path the stat call was made on. 
+
+
+**Get stats using the stat method**
+```javascript
+const stats = await client.stat('path/to/file');
+```
+
+
+
+
+
+### Stats.isBlockDevice ()
+
+Returns `true` if the path is a block device, `false` otherwise.
+
+**check if the path is a block device**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isBlockDevice()); // true or false
+```
+
+
+
+### Stats.isCharacterDevice ()
+
+Returns `true` if the path is a character device, `false` otherwise.
+
+**check if the path is a character device**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isCharacterDevice()); // true or false
+```
+
+
+
+### Stats.isDirectory ()
+
+Returns `true` if the path is a directory, `false` otherwise.
+
+**check if the path is a directory**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isDirectory()); // true or false
+```
+
+
+
+### Stats.isFIFO ()
+
+Returns `true` if the path is a named pipe, `false` otherwise.
+
+**check if the path is a named pipe**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isFIFO()); // true or false
+```
+
+
+
+### Stats.isFile ()
+
+Returns `true` if the path is a regular file, `false` otherwise.
+
+**check if the path is a regular file**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isFile()); // true or false
+```
+
+
+
+### Stats.isSocket ()
+
+Returns `true` if the path is a socket, `false` otherwise.
+
+**check if the path is a socket**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isSocket()); // true or false
+```
+
+
+
+### Stats.isSymbolicLink ()
+
+Returns `true` if the path is a symbolic link, `false` otherwise.
+
+**check if the path is a symbolic link**
+```javascript
+const stats = await client.stat('path/to/file/or/directory');
+
+console.log(stats.isSymbolicLink()); // true or false
+```
