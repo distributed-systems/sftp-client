@@ -19,3 +19,5 @@ node_modules
 config.js
 
 es-modules
+
+test/data/download-root/*

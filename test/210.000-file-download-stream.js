@@ -3,7 +3,11 @@ import log from 'ee-log';
 import assert from 'assert';
 import SFTPServer from './lib/SFTPServer.js';
 import SFTPClient from '../src/SFTPClient.js';
+import fs from 'fs';
+import path from 'path';
 
+
+const { promises: { unlink, stat } } = fs;
 
 
 section('SFTP Client: file stream download', (section) => {
@@ -57,6 +61,46 @@ section('SFTP Client: file stream download', (section) => {
 
 
         await client.end();
+    });
+
+
+
+    section.test('get a file stream for a non existing file, pipe to file system', async() => {
+        section.setTimeout(10000);
+
+        // delete old files
+        const fileName = path.join(path.dirname(new URL(import.meta.url).pathname), 'data/download-root/test-file.bin');
+        await unlink(fileName).catch(e => null);
+
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
+
+
+        const writeStream = fs.createWriteStream(fileName);
+        const readStream = await client.createReadStream('share/100-Kbytes.bin');
+        
+
+        await new Promise((resolve, reject) => {
+            readStream.on('close', resolve);
+            readStream.on('error', reject);
+
+            readStream.pipe(writeStream);
+        });
+        
+
+        const stats = await stat(fileName);
+
+        assert(stats);
+        assert.equal(stats.size, 102400);
+
+        await client.end();
+
+        await unlink(fileName).catch(e => null);
     });
 
 
