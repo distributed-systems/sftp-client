@@ -2,12 +2,13 @@
   "name": "@distributed-systems/sftp-client",
   "version": "1.0.3",
   "description": "A simple, fully tested and reliable SFTP Client",
-  "main": "npm/src/SFTPClient.mjs",
+  "main": "npm/src/SFTPClient.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js",
+    "coverage": "nyc --extension .mjs npm test"
   },
   "repository": {
     "type": "git",
@@ -25,10 +26,12 @@
   },
   "homepage": "https://github.com/distributed-systems/sftp-client#readme",
   "devDependencies": {
-    "ee-log": "^3.0.7",
-    "section-tests": "^2.2.3"
+    "ee-log": "^3.0.9",
+    "nyc": "^13.3.0",
+    "section-tests": "^2.2.4"
   },
   "dependencies": {
-    "ssh2": "^0.6.1"
-  }
+    "ssh2": "^0.6.2"
+  },
+  "type": "module"
 }

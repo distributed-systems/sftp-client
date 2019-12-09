@@ -1,4 +1,4 @@
-import Permissions from './Permissions.mjs';
+import Permissions from './Permissions.js';
 
 /**
  * wrapper for the sftp internal stats class

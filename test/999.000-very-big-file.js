@@ -1,8 +1,8 @@
 import section from 'section-tests';
 import log from 'ee-log';
 import assert from 'assert';
-import SFTPServer from './lib/SFTPServer.mjs';
-import SFTPClient from '../src/SFTPClient.mjs';
+import SFTPServer from './lib/SFTPServer.js';
+import SFTPClient from '../src/SFTPClient.js';
 import crypto from 'crypto';
 
 

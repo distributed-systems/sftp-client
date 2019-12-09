@@ -1,6 +1,6 @@
 import section from 'section-tests';
 import log from 'ee-log';
-import SFTPServer from './lib/SFTPServer.mjs';
+import SFTPServer from './lib/SFTPServer.js';
 
 
 

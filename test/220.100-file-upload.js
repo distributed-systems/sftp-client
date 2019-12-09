@@ -1,8 +1,10 @@
 import section from 'section-tests';
 import log from 'ee-log';
 import assert from 'assert';
-import SFTPServer from './lib/SFTPServer.mjs';
-import SFTPClient from '../src/SFTPClient.mjs';
+import SFTPServer from './lib/SFTPServer.js';
+import SFTPClient from '../src/SFTPClient.js';
+import fs from 'fs';
+import path from 'path';
 
 
 section('SFTP Client: file upload', (section) => {
@@ -16,7 +18,7 @@ section('SFTP Client: file upload', (section) => {
 
 
 
-    section.test('read dir', async() => {
+    section.test('put a file', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -25,17 +27,16 @@ section('SFTP Client: file upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const files = await client.list('share');
+        const sourceFile = path.join(path.dirname(new URL(import.meta.url).pathname), 'data/sftp-root/100-bytes.bin');
+        const buffer = await fs.promises.readFile(sourceFile);
 
-        assert(files);
-        assert(files.length > 0);
-
+        await client.putFile('upload/100-bytes.bin.upload-file', buffer);
         await client.end();
     });
 
 
 
-    section.test('read dir, return stats', async() => {
+    section.test('put a to an existing file', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -44,15 +45,13 @@ section('SFTP Client: file upload', (section) => {
             privateKey: server.privateKey,
         });
 
-        const files = await client.list('share', true);
+        const sourceFile = path.join(path.dirname(new URL(import.meta.url).pathname), 'data/sftp-root/100-bytes.bin');
+        const buffer = await fs.promises.readFile(sourceFile);
 
-        assert(files);
-        assert(files.length > 0);
-        assert(files[0].stats);
-        assert(files[0].stats.size > 0);
-
+        await client.putFile('upload/100-bytes.bin.upload-file', buffer);
         await client.end();
     });
+
 
 
 

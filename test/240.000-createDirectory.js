@@ -1,12 +1,11 @@
 import section from 'section-tests';
 import log from 'ee-log';
 import assert from 'assert';
-import SFTPServer from './lib/SFTPServer.mjs';
-import SFTPClient from '../src/SFTPClient.mjs';
-import crypto from 'crypto';
+import SFTPServer from './lib/SFTPServer.js';
+import SFTPClient from '../src/SFTPClient.js';
 
 
-section('SFTP Client: delete file', (section) => {
+section('SFTP Client: create directory', (section) => {
     let server;
 
     section.setup('starting the SFTP Server', async () => {
@@ -17,7 +16,7 @@ section('SFTP Client: delete file', (section) => {
 
 
 
-    section.test('delete a file', async() => {
+    section.test('create a directory', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -26,36 +25,13 @@ section('SFTP Client: delete file', (section) => {
             privateKey: server.privateKey,
         });
 
-
-        const writeStream = await client.createtWriteStream('upload/delete.me');
-
-        const getBytes = (num) => {
-            return new Promise((resolve, reject) => {
-                crypto.randomBytes(num, (err, bytes) => {
-                    if (err) reject(err);
-                    else resolve(bytes);
-                });
-            });
-        }
-
-        const buffer = await getBytes(1000);
-        writeStream.write(buffer);
-
-        await new Promise((resolve, reject) => {
-            writeStream.on('error', reject);
-            writeStream.on('close', resolve);
-            writeStream.end();
-        });
-
-
-
-        await client.deleteFile('upload/delete.me');
+        await client.createDirectory('upload/testdir');
         await client.end();
     });
 
 
 
-    section.test('delete a directory', async() => {
+    section.test('create a path', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -64,24 +40,37 @@ section('SFTP Client: delete file', (section) => {
             privateKey: server.privateKey,
         });
 
+        await client.createDirectory('upload/testdir-2/subdir/sub-subdir', true);
+        await client.end();
+    });
+
+
+
+    section.test('create a path, non recursive', async() => {
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
 
         let err;
         try {
-            await client.deleteFile('upload');
+            await client.createDirectory('upload/some/subdir/sub-subdir');
         } catch (e) {
             err = e;
         } finally {
             assert(err);
-            assert.equal(err.message, `Cannot delete file 'upload': path is a directory!`);
+            assert(err.message.startsWith(`Cannot create directory 'upload/some/subdir/sub-subdir', the parent directory`));
         }
-        
+
         await client.end();
     });
 
 
 
-
-    section.test('delete a non existing file', async() => {
+    section.test('create an existing directory', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -90,20 +79,18 @@ section('SFTP Client: delete file', (section) => {
             privateKey: server.privateKey,
         });
 
-
         let err;
         try {
-            await client.deleteFile('upload/nope');
+            await client.createDirectory('upload');
         } catch (e) {
             err = e;
         } finally {
             assert(err);
-            assert.equal(err.message, `Cannot delete file 'upload/nope': it does not exist!`);
+            assert(err.message.startsWith(`Cannot create directory 'upload'`));
         }
 
         await client.end();
     });
-
 
 
 

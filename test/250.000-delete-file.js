@@ -1,11 +1,12 @@
 import section from 'section-tests';
 import log from 'ee-log';
 import assert from 'assert';
-import SFTPServer from './lib/SFTPServer.mjs';
-import SFTPClient from '../src/SFTPClient.mjs';
+import SFTPServer from './lib/SFTPServer.js';
+import SFTPClient from '../src/SFTPClient.js';
+import crypto from 'crypto';
 
 
-section('SFTP Client: create directory', (section) => {
+section('SFTP Client: delete file', (section) => {
     let server;
 
     section.setup('starting the SFTP Server', async () => {
@@ -16,7 +17,7 @@ section('SFTP Client: create directory', (section) => {
 
 
 
-    section.test('create a directory', async() => {
+    section.test('delete a file', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -25,13 +26,36 @@ section('SFTP Client: create directory', (section) => {
             privateKey: server.privateKey,
         });
 
-        await client.createDirectory('upload/testdir');
+
+        const writeStream = await client.createtWriteStream('upload/delete.me');
+
+        const getBytes = (num) => {
+            return new Promise((resolve, reject) => {
+                crypto.randomBytes(num, (err, bytes) => {
+                    if (err) reject(err);
+                    else resolve(bytes);
+                });
+            });
+        }
+
+        const buffer = await getBytes(1000);
+        writeStream.write(buffer);
+
+        await new Promise((resolve, reject) => {
+            writeStream.on('error', reject);
+            writeStream.on('close', resolve);
+            writeStream.end();
+        });
+
+
+
+        await client.deleteFile('upload/delete.me');
         await client.end();
     });
 
 
 
-    section.test('create a path', async() => {
+    section.test('delete a directory', async() => {
         const client = new SFTPClient();
         await client.connect({
             hostname: 'l.dns.porn',
@@ -40,57 +64,46 @@ section('SFTP Client: create directory', (section) => {
             privateKey: server.privateKey,
         });
 
-        await client.createDirectory('upload/testdir-2/subdir/sub-subdir', true);
-        await client.end();
-    });
-
-
-
-    section.test('create a path, non recursive', async() => {
-        const client = new SFTPClient();
-        await client.connect({
-            hostname: 'l.dns.porn',
-            port: 2222,
-            username: 'foo',
-            privateKey: server.privateKey,
-        });
 
         let err;
         try {
-            await client.createDirectory('upload/some/subdir/sub-subdir');
+            await client.deleteFile('upload');
         } catch (e) {
             err = e;
         } finally {
             assert(err);
-            assert(err.message.startsWith(`Cannot create directory 'upload/some/subdir/sub-subdir', the parent directory`));
+            assert.equal(err.message, `Cannot delete file 'upload': path is a directory!`);
+        }
+        
+        await client.end();
+    });
+
+
+
+
+    section.test('delete a non existing file', async() => {
+        const client = new SFTPClient();
+        await client.connect({
+            hostname: 'l.dns.porn',
+            port: 2222,
+            username: 'foo',
+            privateKey: server.privateKey,
+        });
+
+
+        let err;
+        try {
+            await client.deleteFile('upload/nope');
+        } catch (e) {
+            err = e;
+        } finally {
+            assert(err);
+            assert.equal(err.message, `Cannot delete file 'upload/nope': it does not exist!`);
         }
 
         await client.end();
     });
 
-
-
-    section.test('create an existing directory', async() => {
-        const client = new SFTPClient();
-        await client.connect({
-            hostname: 'l.dns.porn',
-            port: 2222,
-            username: 'foo',
-            privateKey: server.privateKey,
-        });
-
-        let err;
-        try {
-            await client.createDirectory('upload');
-        } catch (e) {
-            err = e;
-        } finally {
-            assert(err);
-            assert(err.message.startsWith(`Cannot create directory 'upload'`));
-        }
-
-        await client.end();
-    });
 
 
 

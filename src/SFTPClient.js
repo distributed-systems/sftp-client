@@ -1,5 +1,5 @@
-import Stats from './Stats.mjs';
-import Permissions from './Permissions.mjs';
+import Stats from './Stats.js';
+import Permissions from './Permissions.js';
 import ssh2 from 'ssh2';
 import path from 'path';
 const SSH2Client = ssh2.Client;
