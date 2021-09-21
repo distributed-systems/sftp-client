@@ -31,7 +31,7 @@
     "section-tests": "^2.2.4"
   },
   "dependencies": {
-    "ssh2": "^0.6.2"
+    "ssh2": "^1.4.0"
   },
   "type": "module"
 }
