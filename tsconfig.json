@@ -1,0 +1,23 @@
+{
+    "extends": "@tsconfig/node20/tsconfig.json",
+    "compilerOptions": {
+      "preserveConstEnums": true,
+      "outDir": "dist",
+      "strictPropertyInitialization": false,
+      "target": "es2020",
+      "module": "es2020",
+      "moduleResolution": "Node",
+      "strict": true,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "sourceMap": true,
+      "declaration": true,
+      "allowSyntheticDefaultImports": true,
+      "declarationMap": true,
+      "lib": [
+        "es2020", "DOM"
+      ]
+    },
+    "include": ["src/**/*", "index.ts", "test.ts"],
+    "exclude": ["node_modules", "**/*.spec.ts"]
+  }

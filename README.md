@@ -1,9 +1,8 @@
 # SFTP Client
 
-A simple, fully tested and reliable SFTP Client.
 
+100% Typescript SFTP client
 
-Compatible with node.js 10+, with the `--experimental-modules` flag set.
 
 
 ## Function Reference
@@ -55,13 +54,13 @@ const client = new SFTPClient();
 await client.connect({
     hostname: 'l.dns.porn',
     port: 22,
-    username: 'eventEmitter',
+    username: 'linaGirl',
     password: 'totally-secure',
 });
 
 
 // get the file as a buffer
-const file = await client.getFile('/home/eventEmitter/nice-file.dat');
+const file = await client.getFile('/home/linaGirl/nice-file.dat');
 
 client.end();
 ```
@@ -84,7 +83,7 @@ Returns the sftpClient instance.
 await client.connect({
     hostname: 'l.dns.porn',
     port: 22,
-    username: 'eventEmitter',
+    username: 'linaGirl',
     password: 'totally-secure',
 });
 ```
@@ -94,12 +93,12 @@ await client.connect({
 ```javascript
 import fs from 'fs';
 
-const privateKey = await fs.promises.readFile('/home/eventEmitter/.ssh/id_rsa');
+const privateKey = await fs.promises.readFile('/home/linaGirl/.ssh/id_rsa');
 
 await client.connect({
     hostname: 'l.dns.porn',
     port: 22,
-    username: 'eventEmitter',
+    username: 'linaGirl',
     privateKey: privateKey,
 });
 ```
@@ -146,7 +145,7 @@ const readStream = await client.createReadStream('fancy-file.fancy');
 
 
 // create a write stream for the file the data should be stored in
-const writeStream = fs.createWriteStream('/home/eventEmitter/fancy-file.fancy');
+const writeStream = fs.createWriteStream('/home/linaGirl/fancy-file.fancy');
 
 
 // pipe the stream
@@ -202,7 +201,7 @@ const writeStream = await client.createReadStream('fancy-file.fancy');
 
 
 // create a read stream for the file the data should be read from
-const readStream = fs.createReadStream('/home/eventEmitter/fancy-file.fancy');
+const readStream = fs.createReadStream('/home/linaGirl/fancy-file.fancy');
 
 
 // pipe the stream
